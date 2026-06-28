@@ -1,4 +1,10 @@
 // Client-side Database Mock using LocalStorage
+import emeraldSilkBlouse from './assets/emerald_silk_blouse.png';
+import indigoCottonDress from './assets/indigo_cotton_dress.png';
+import ivoryLaceBlouse from './assets/ivory_lace_blouse.png';
+import crimsonLinenDress from './assets/crimson_linen_dress.png';
+import mustardGeorgetteBlouse from './assets/mustard_georgette_blouse.png';
+import pinkOrganzaDress from './assets/pink_organza_dress.png';
 
 const DEFAULT_RULES = {
   rental_fee_default: '5.99',            // re-purposed as flat shipping fee
@@ -7,6 +13,81 @@ const DEFAULT_RULES = {
   rental_period_default: '5',            // re-purposed as default delivery window in days
   whatsapp_number_default: '+916309571931'
 };
+
+const DEFAULT_PRODUCTS = [
+  {
+    id: 1,
+    title: "Emerald Silk Designer Blouse",
+    category: "Blouses",
+    price: 85,
+    image: emeraldSilkBlouse,
+    size: "M",
+    fabric: "Raw Silk & Zardosi",
+    condition: "Handmade New",
+    description: "A luxury emerald green raw silk blouse featuring hand-embroidered floral zardosi work and a sophisticated sweetheart neckline.",
+    stock: 5
+  },
+  {
+    id: 2,
+    title: "Indigo Cotton Handblock Print Dress",
+    category: "Dresses",
+    price: 95,
+    image: indigoCottonDress,
+    size: "M",
+    fabric: "Organic Hand-spun Cotton",
+    condition: "Gently Loved",
+    description: "An elegant, breathable midi dress adorned with indigo handblock floral prints, a tiered skirt, and puff sleeves.",
+    stock: 5
+  },
+  {
+    id: 3,
+    title: "Ivory Lace Designer Blouse",
+    category: "Blouses",
+    price: 75,
+    image: ivoryLaceBlouse,
+    size: "S",
+    fabric: "Chantilly Lace & Satin",
+    condition: "Handmade New",
+    description: "A delicate cream Chantilly lace blouse with a sheer high neckline, buttoned back, and comfortable satin lining.",
+    stock: 5
+  },
+  {
+    id: 4,
+    title: "Crimson Linen Tiered Maxi Dress",
+    category: "Dresses",
+    price: 110,
+    image: crimsonLinenDress,
+    size: "L",
+    fabric: "Pure Italian Linen",
+    condition: "Gently Loved",
+    description: "A vibrant crimson tiered maxi dress with adjustable tie-up shoulder straps and a relaxed yet flattering silhouette.",
+    stock: 5
+  },
+  {
+    id: 5,
+    title: "Mustard Georgette Peplum Blouse",
+    category: "Blouses",
+    price: 65,
+    image: mustardGeorgetteBlouse,
+    size: "OS",
+    fabric: "Georgette & Mirror Work",
+    condition: "Upcycled Gem",
+    description: "A stylish peplum blouse featuring intricate mirror embroidery on the yoke and a flared hemline, perfect for occasions.",
+    stock: 5
+  },
+  {
+    id: 6,
+    title: "Pastel Pink Organza Day Dress",
+    category: "Dresses",
+    price: 125,
+    image: pinkOrganzaDress,
+    size: "M",
+    fabric: "Premium Organza & Crepe",
+    condition: "Handmade New",
+    description: "A romantic pastel pink dress in lightweight organza, featuring a hand-painted floral pattern, wrap bodice, and ruffled hem.",
+    stock: 5
+  }
+];
 
 const DEFAULT_ORDERS = [
   {
@@ -18,12 +99,12 @@ const DEFAULT_ORDERS = [
     saree_name: "Emerald Silk Designer Blouse (Qty: 1)",
     saree_category: "Blouses",
     size: "M",
-    rental_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3 days ago
-    return_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],  // due in 2 days
+    rental_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    return_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     rental_amount: 85.00,
     deposit_amount: 6.80,
     cleaning_charge: 0.00,
-    status: "Active", // "Shipped" mapped to Active style
+    status: "Active",
     created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
   },
   {
@@ -35,12 +116,12 @@ const DEFAULT_ORDERS = [
     saree_name: "Pastel Pink Organza Day Dress (Qty: 1), Ivory Lace Designer Blouse (Qty: 1)",
     saree_category: "Dresses, Blouses",
     size: "M, S",
-    rental_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 day ago
+    rental_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     return_date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     rental_amount: 200.00,
     deposit_amount: 16.00,
     cleaning_charge: 0.00,
-    status: "Pending", // "Pending" status style
+    status: "Pending",
     created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
   },
   {
@@ -52,12 +133,12 @@ const DEFAULT_ORDERS = [
     saree_name: "Crimson Linen Tiered Maxi Dress (Qty: 1)",
     saree_category: "Dresses",
     size: "L",
-    rental_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 10 days ago
+    rental_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     return_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     rental_amount: 110.00,
     deposit_amount: 8.80,
     cleaning_charge: 0.00,
-    status: "Returned", // "Delivered" mapped to Returned style
+    status: "Returned",
     created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
   }
 ];
@@ -91,6 +172,9 @@ const initDB = () => {
   if (!localStorage.getItem('jyothi_boutique_orders')) {
     localStorage.setItem('jyothi_boutique_orders', JSON.stringify(DEFAULT_ORDERS));
   }
+  if (!localStorage.getItem('jyothi_boutique_products')) {
+    localStorage.setItem('jyothi_boutique_products', JSON.stringify(DEFAULT_PRODUCTS));
+  }
   if (!localStorage.getItem('jyothi_boutique_audit_logs')) {
     localStorage.setItem('jyothi_boutique_audit_logs', JSON.stringify(DEFAULT_AUDIT_LOGS));
   }
@@ -107,6 +191,51 @@ export const dbMock = {
   saveRules: (rules) => {
     localStorage.setItem('jyothi_boutique_rules', JSON.stringify(rules));
     dbMock.addAuditLog("System rules updated", null);
+  },
+  getProducts: () => {
+    initDB();
+    return JSON.parse(localStorage.getItem('jyothi_boutique_products'));
+  },
+  saveProducts: (products) => {
+    localStorage.setItem('jyothi_boutique_products', JSON.stringify(products));
+  },
+  addProduct: (product) => {
+    initDB();
+    const products = JSON.parse(localStorage.getItem('jyothi_boutique_products'));
+    const newProduct = {
+      ...product,
+      id: Date.now()
+    };
+    products.push(newProduct);
+    localStorage.setItem('jyothi_boutique_products', JSON.stringify(products));
+    dbMock.addAuditLog(`New product added: ${product.title}`, null);
+    return newProduct;
+  },
+  updateProduct: (updatedProduct) => {
+    initDB();
+    const products = JSON.parse(localStorage.getItem('jyothi_boutique_products'));
+    const idx = products.findIndex(p => p.id === updatedProduct.id);
+    if (idx !== -1) {
+      products[idx] = updatedProduct;
+      localStorage.setItem('jyothi_boutique_products', JSON.stringify(products));
+      dbMock.addAuditLog(`Product updated: ${updatedProduct.title}`, null);
+      return true;
+    }
+    return false;
+  },
+  deleteProduct: (id) => {
+    initDB();
+    const products = JSON.parse(localStorage.getItem('jyothi_boutique_products'));
+    const productToDelete = products.find(p => p.id === id);
+    const filtered = products.filter(p => p.id !== id);
+    if (filtered.length !== products.length) {
+      localStorage.setItem('jyothi_boutique_products', JSON.stringify(filtered));
+      if (productToDelete) {
+        dbMock.addAuditLog(`Product deleted: ${productToDelete.title}`, null);
+      }
+      return true;
+    }
+    return false;
   },
   getOrders: (filters = {}) => {
     initDB();
@@ -201,7 +330,6 @@ export const dbMock = {
     };
     
     // Revenue calculations
-    // Sum subtotal (rental_amount) + shipping (cleaning_charge) + tax (deposit_amount)
     const totalRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.rental_amount || 0) + parseFloat(o.cleaning_charge || 0) + parseFloat(o.deposit_amount || 0)), 0);
     
     // Generate daily revenue for last 7 days

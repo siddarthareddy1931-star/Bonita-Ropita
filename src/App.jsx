@@ -4,90 +4,6 @@ import './App.css';
 import AdminDashboard from './AdminDashboard';
 import AdminLogin from './AdminLogin';
 
-// Product images
-import emeraldSilkBlouse from './assets/emerald_silk_blouse.png';
-import indigoCottonDress from './assets/indigo_cotton_dress.png';
-import ivoryLaceBlouse from './assets/ivory_lace_blouse.png';
-import crimsonLinenDress from './assets/crimson_linen_dress.png';
-import mustardGeorgetteBlouse from './assets/mustard_georgette_blouse.png';
-import pinkOrganzaDress from './assets/pink_organza_dress.png';
-
-// Mock Product Database
-const PRODUCTS = [
-  {
-    id: 1,
-    title: "Emerald Silk Designer Blouse",
-    category: "Blouses",
-    price: 85,
-    image: emeraldSilkBlouse,
-    size: "M",
-    fabric: "Raw Silk & Zardosi",
-    condition: "Handmade New",
-    description: "A luxury emerald green raw silk blouse featuring hand-embroidered floral zardosi work and a sophisticated sweetheart neckline.",
-    stock: 5
-  },
-  {
-    id: 2,
-    title: "Indigo Cotton Handblock Print Dress",
-    category: "Dresses",
-    price: 95,
-    image: indigoCottonDress,
-    size: "M",
-    fabric: "Organic Hand-spun Cotton",
-    condition: "Gently Loved",
-    description: "An elegant, breathable midi dress adorned with indigo handblock floral prints, a tiered skirt, and puff sleeves.",
-    stock: 5
-  },
-  {
-    id: 3,
-    title: "Ivory Lace Designer Blouse",
-    category: "Blouses",
-    price: 75,
-    image: ivoryLaceBlouse,
-    size: "S",
-    fabric: "Chantilly Lace & Satin",
-    condition: "Handmade New",
-    description: "A delicate cream Chantilly lace blouse with a sheer high neckline, buttoned back, and comfortable satin lining.",
-    stock: 5
-  },
-  {
-    id: 4,
-    title: "Crimson Linen Tiered Maxi Dress",
-    category: "Dresses",
-    price: 110,
-    image: crimsonLinenDress,
-    size: "L",
-    fabric: "Pure Italian Linen",
-    condition: "Gently Loved",
-    description: "A vibrant crimson tiered maxi dress with adjustable tie-up shoulder straps and a relaxed yet flattering silhouette.",
-    stock: 5
-  },
-  {
-    id: 5,
-    title: "Mustard Georgette Peplum Blouse",
-    category: "Blouses",
-    price: 65,
-    image: mustardGeorgetteBlouse,
-    size: "OS",
-    fabric: "Georgette & Mirror Work",
-    condition: "Upcycled Gem",
-    description: "A stylish peplum blouse featuring intricate mirror embroidery on the yoke and a flared hemline, perfect for occasions.",
-    stock: 5
-  },
-  {
-    id: 6,
-    title: "Pastel Pink Organza Day Dress",
-    category: "Dresses",
-    price: 125,
-    image: pinkOrganzaDress,
-    size: "M",
-    fabric: "Premium Organza & Crepe",
-    condition: "Handmade New",
-    description: "A romantic pastel pink dress in lightweight organza, featuring a hand-painted floral pattern, wrap bodice, and ruffled hem.",
-    stock: 5
-  }
-];
-
 function App() {
   // Navigation & Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -122,6 +38,11 @@ function App() {
   useEffect(() => {
     setSystemRules(dbMock.getRules());
   }, []);
+
+  const [products, setProducts] = useState([]);
+  useEffect(() => {
+    setProducts(dbMock.getProducts());
+  }, [isAdminView]);
 
   // Checkout Modal Step Wizard
   // 0 = Close, 1 = Shipping Info, 2 = Simulated Payment, 3 = Order Success!
@@ -262,7 +183,7 @@ Are these items available for booking/purchase?`;
   };
 
   // Filter Logic
-  const filteredProducts = PRODUCTS.filter((product) => {
+  const filteredProducts = products.filter((product) => {
     const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           product.fabric.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           product.description.toLowerCase().includes(searchQuery.toLowerCase());

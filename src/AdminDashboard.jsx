@@ -48,6 +48,24 @@ export default function AdminDashboard({ onClose, onLogout }) {
 
   // Form State for Create/Edit
   const [formMode, setFormMode] = useState('create'); // 'create' or 'edit'
+
+  // Product state variables
+  const [products, setProducts] = useState([]);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [productFormMode, setProductFormMode] = useState('create');
+  const [productFormData, setProductFormData] = useState({
+    id: '',
+    title: '',
+    category: 'Blouses',
+    price: '',
+    size: 'M',
+    fabric: '',
+    condition: 'Handmade New',
+    description: '',
+    stock: 5,
+    image: ''
+  });
+  const [productFormErrors, setProductFormErrors] = useState({});
   const [formData, setFormData] = useState({
     customer_name: '',
     phone: '',
@@ -95,6 +113,10 @@ export default function AdminDashboard({ onClose, onLogout }) {
       // Fetch system rules
       const rulesData = dbMock.getRules();
       setSystemRules(rulesData);
+
+      // Fetch products
+      const productsData = dbMock.getProducts();
+      setProducts(productsData);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
     } finally {
@@ -429,6 +451,103 @@ export default function AdminDashboard({ onClose, onLogout }) {
     setIsFormModalOpen(true);
   };
 
+  // Product handlers
+  const handleOpenProductCreateModal = () => {
+    setProductFormMode('create');
+    setProductFormData({
+      id: '',
+      title: '',
+      category: 'Blouses',
+      price: '',
+      size: 'M',
+      fabric: '',
+      condition: 'Handmade New',
+      description: '',
+      stock: 5,
+      image: ''
+    });
+    setProductFormErrors({});
+    setIsProductModalOpen(true);
+  };
+
+  const handleOpenProductEditModal = (prod) => {
+    setProductFormMode('edit');
+    setProductFormData({
+      id: prod.id,
+      title: prod.title,
+      category: prod.category,
+      price: String(prod.price),
+      size: prod.size,
+      fabric: prod.fabric,
+      condition: prod.condition,
+      description: prod.description,
+      stock: prod.stock,
+      image: prod.image
+    });
+    setProductFormErrors({});
+    setIsProductModalOpen(true);
+  };
+
+  const handleProductInputChange = (e) => {
+    const { name, value } = e.target;
+    setProductFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleProductImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProductFormData(prev => ({
+        ...prev,
+        image: reader.result
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const validateProductForm = () => {
+    const errors = {};
+    if (!productFormData.title.trim()) errors.title = 'Title is required';
+    if (!productFormData.price || parseFloat(productFormData.price) <= 0) errors.price = 'Valid price is required';
+    if (!productFormData.fabric.trim()) errors.fabric = 'Fabric description is required';
+    if (!productFormData.image) errors.image = 'Product image is required';
+    
+    setProductFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleProductFormSubmit = (e) => {
+    e.preventDefault();
+    if (!validateProductForm()) return;
+
+    const parsedData = {
+      ...productFormData,
+      price: parseFloat(productFormData.price),
+      stock: parseInt(productFormData.stock, 10)
+    };
+
+    if (productFormMode === 'create') {
+      dbMock.addProduct(parsedData);
+    } else {
+      dbMock.updateProduct(parsedData);
+    }
+
+    setIsProductModalOpen(false);
+    fetchAllData();
+  };
+
+  const handleDeleteProduct = (id) => {
+    if (window.confirm('Are you sure you want to delete this product from the boutique database?')) {
+      dbMock.deleteProduct(id);
+      fetchAllData();
+    }
+  };
+
   // Submit form handler
   const handleFormSubmit = (e) => {
     e.preventDefault();
@@ -573,9 +692,9 @@ export default function AdminDashboard({ onClose, onLogout }) {
       {/* Title block */}
       <div className="section-header">
         <div>
-          <h2>Rental System & Occasion Styling Management</h2>
+          <h2>Boutique Catalogue & Order Management</h2>
           <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            Track your boutique inventories, customers, return statuses, and business reports.
+            Track your boutique catalogue, orders, customer shipments, and business reports.
           </p>
         </div>
         
@@ -599,6 +718,9 @@ export default function AdminDashboard({ onClose, onLogout }) {
         </button>
         <button className={`admin-tab-btn ${activeTab === 'rentals' ? 'active' : ''}`} onClick={() => setActiveTab('rentals')}>
           🛍️ Manage Orders
+        </button>
+        <button className={`admin-tab-btn ${activeTab === 'catalogue' ? 'active' : ''}`} onClick={() => setActiveTab('catalogue')}>
+          👗 Manage Products
         </button>
         <button className={`admin-tab-btn ${activeTab === 'reports' ? 'active' : ''}`} onClick={() => setActiveTab('reports')}>
           📈 Reports & Charts
@@ -848,6 +970,86 @@ export default function AdminDashboard({ onClose, onLogout }) {
                             ✏️
                           </button>
                           <button className="btn-icon delete" title="Delete rental" onClick={() => handleDeleteRental(r.id)}>
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Dynamic Boutique Catalogue Management Tab */}
+      {activeTab === 'catalogue' && (
+        <div className="fadeIn">
+          <div className="section-header" style={{ marginBottom: '20px' }}>
+            <div>
+              <h3>Boutique Garments & Product Catalogue</h3>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                Add new garments, update prices, manage sizes and fabric descriptions, or upload new images.
+              </p>
+            </div>
+            <button className="btn-primary" onClick={handleOpenProductCreateModal}>
+              ➕ Add New Product
+            </button>
+          </div>
+
+          {products.length === 0 ? (
+            <div className="empty-state card">
+              <span className="empty-state-icon">👗</span>
+              <h3>No products found in catalogue.</h3>
+              <p>Add your first designer item to display on the boutique storefront.</p>
+              <button className="btn-primary" onClick={handleOpenProductCreateModal}>
+                Add First Product
+              </button>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Image</th>
+                    <th>Product Title</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Size</th>
+                    <th>Fabric / Zari details</th>
+                    <th>Condition</th>
+                    <th>Stock</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map(p => (
+                    <tr key={p.id}>
+                      <td>
+                        <img 
+                          src={p.image} 
+                          alt={p.title} 
+                          style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #ddd' }}
+                        />
+                      </td>
+                      <td><strong>{p.title}</strong></td>
+                      <td>{p.category}</td>
+                      <td><strong>{formatCurrency(p.price)}</strong></td>
+                      <td><span className="size-badge" style={{ display: 'inline-block', padding: '2px 8px', background: '#eee', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>{p.size}</span></td>
+                      <td style={{ fontSize: '0.85rem' }}>{p.fabric}</td>
+                      <td>
+                        <span className="condition-label" style={{ fontSize: '0.8rem', color: 'var(--accent-coral)', fontWeight: '500' }}>
+                          {p.condition}
+                        </span>
+                      </td>
+                      <td>{p.stock}</td>
+                      <td>
+                        <div className="actions-cell">
+                          <button className="btn-icon" title="Edit Product" onClick={() => handleOpenProductEditModal(p)}>
+                            ✏️
+                          </button>
+                          <button className="btn-icon delete" title="Delete Product" onClick={() => handleDeleteProduct(p.id)}>
                             🗑️
                           </button>
                         </div>
@@ -1501,6 +1703,157 @@ export default function AdminDashboard({ onClose, onLogout }) {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. MANAGE PRODUCTS FORM MODAL (ADD & EDIT BOUTIQUE GARMENTS) */}
+      {isProductModalOpen && (
+        <div className="admin-modal-overlay" onClick={() => setIsProductModalOpen(false)}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h3>{productFormMode === 'create' ? 'Add New Product to Catalogue' : 'Edit Product Details'}</h3>
+              <button className="close-cart-btn" onClick={() => setIsProductModalOpen(false)}>×</button>
+            </div>
+            
+            <form onSubmit={handleProductFormSubmit}>
+              <div className="admin-modal-body">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  
+                  {/* Title */}
+                  <div className="admin-form-group">
+                    <label>Product Title *</label>
+                    <input 
+                      type="text" 
+                      name="title" 
+                      value={productFormData.title} 
+                      onChange={handleProductInputChange} 
+                      placeholder="e.g., Pink Silk Zari Blouse"
+                      className={productFormErrors.title ? 'error' : ''} 
+                    />
+                    {productFormErrors.title && <p className="error-text">{productFormErrors.title}</p>}
+                  </div>
+
+                  {/* Category */}
+                  <div className="admin-form-group">
+                    <label>Category *</label>
+                    <select name="category" value={productFormData.category} onChange={handleProductInputChange}>
+                      <option value="Blouses">Blouses</option>
+                      <option value="Dresses">Dresses</option>
+                    </select>
+                  </div>
+
+                  {/* Price */}
+                  <div className="admin-form-group">
+                    <label>Retail Price ($) *</label>
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      name="price" 
+                      value={productFormData.price} 
+                      onChange={handleProductInputChange} 
+                      placeholder="85.00"
+                      className={productFormErrors.price ? 'error' : ''} 
+                    />
+                    {productFormErrors.price && <p className="error-text">{productFormErrors.price}</p>}
+                  </div>
+
+                  {/* Size */}
+                  <div className="admin-form-group">
+                    <label>Size Dimension *</label>
+                    <select name="size" value={productFormData.size} onChange={handleProductInputChange}>
+                      <option value="S">Small (S)</option>
+                      <option value="M">Medium (M)</option>
+                      <option value="L">Large (L)</option>
+                      <option value="OS">One Size (OS)</option>
+                    </select>
+                  </div>
+
+                  {/* Fabric Description */}
+                  <div className="admin-form-group">
+                    <label>Fabric / Decoration Details *</label>
+                    <input 
+                      type="text" 
+                      name="fabric" 
+                      value={productFormData.fabric} 
+                      onChange={handleProductInputChange} 
+                      placeholder="e.g., Raw Silk with Zari embroidery"
+                      className={productFormErrors.fabric ? 'error' : ''} 
+                    />
+                    {productFormErrors.fabric && <p className="error-text">{productFormErrors.fabric}</p>}
+                  </div>
+
+                  {/* Condition label */}
+                  <div className="admin-form-group">
+                    <label>Boutique Label *</label>
+                    <select name="condition" value={productFormData.condition} onChange={handleProductInputChange}>
+                      <option value="Handmade New">Handmade New</option>
+                      <option value="Gently Loved">Gently Loved</option>
+                      <option value="Upcycled Gem">Upcycled Gem</option>
+                      <option value="Vintage Gem">Vintage Gem</option>
+                    </select>
+                  </div>
+
+                  {/* Stock */}
+                  <div className="admin-form-group">
+                    <label>Available Stock *</label>
+                    <input 
+                      type="number" 
+                      name="stock" 
+                      value={productFormData.stock} 
+                      onChange={handleProductInputChange} 
+                      min="1" 
+                    />
+                  </div>
+
+                  {/* Product Image File Input */}
+                  <div className="admin-form-group">
+                    <label>Product Image Upload *</label>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleProductImageUpload} 
+                      className={productFormErrors.image ? 'error' : ''}
+                    />
+                    {productFormErrors.image && <p className="error-text">{productFormErrors.image}</p>}
+                    
+                    {productFormData.image && (
+                      <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Preview:</span>
+                        <img 
+                          src={productFormData.image} 
+                          alt="Boutique upload preview" 
+                          style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #ccc' }} 
+                        />
+                      </div>
+                    )}
+                  </div>
+                  
+                </div>
+
+                {/* Description textarea */}
+                <div className="admin-form-group" style={{ marginTop: '16px' }}>
+                  <label>Product Description</label>
+                  <textarea 
+                    name="description" 
+                    value={productFormData.description} 
+                    onChange={handleProductInputChange} 
+                    placeholder="Provide a detailed description of the garment's stitching, neckline, fitting, and style..."
+                    rows="3"
+                    style={{ width: '100%', boxSizing: 'border-box', border: '2px solid var(--text-primary)', borderRadius: '8px', padding: '8px' }}
+                  />
+                </div>
+              </div>
+              
+              <div className="admin-modal-footer">
+                <button type="button" className="btn-secondary" onClick={() => setIsProductModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  {productFormMode === 'create' ? 'Add to Catalogue' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
