@@ -1,8 +1,8 @@
-# 🌸 Ropita Bonita
+# 🌸 Jyothi Reddy Boutique
 
-**Ropita Bonita** is a sleek, modern Saree Rental, Occasion Styling & Services Management System. Built using **React (Vite)** on the frontend and an **Express (Node.js)** backend, it allows saree boutique owners to manage customer rentals, analyze dashboard statistics with interactive charts, customize system-wide rules, and inspect audit logs.
+**Jyothi Reddy Boutique** is a sleek, modern Saree Rental, Occasion Styling & Services Management System. Built using **React (Vite)** on the frontend and an **Express (Node.js)** backend, it allows saree boutique owners to manage customer rentals, analyze dashboard statistics with interactive charts, customize system-wide rules, and inspect audit logs.
 
-*   **Production App URL**: [ropita-bonita.vercel.app](https://ropita-bonita.vercel.app)
+*   **Production App URL**: [jyothi-reddy-boutique.vercel.app](https://jyothi-reddy-boutique.vercel.app)
 *   **Production Database**: Hosted on serverless Neon PostgreSQL.
 
 ---
@@ -53,8 +53,8 @@
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/siddarthareddy1931-star/Bonita-Ropita.git
-cd Bonita-Ropita
+git clone https://github.com/siddarthareddy1931-star/Jyothi-Reddy-Boutique.git
+cd Jyothi-Reddy-Boutique
 ```
 
 ### 2. Install dependencies

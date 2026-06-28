@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Chart } from 'chart.js/auto';
 import './AdminDashboard.css';
+import { dbMock } from './dbMock';
 
 export default function AdminDashboard({ onClose, onLogout }) {
   // Navigation tabs: 'overview', 'rentals', 'reports', 'notifications', 'audit', 'settings'
@@ -53,7 +54,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
     email: '',
     occasion: '',
     saree_name: '',
-    saree_category: 'Saree',
+    saree_category: 'Blouses',
     size: 'M',
     rental_date: new Date().toISOString().split('T')[0],
     return_date: '',
@@ -65,39 +66,35 @@ export default function AdminDashboard({ onClose, onLogout }) {
   const [formErrors, setFormErrors] = useState({});
 
   // Fetch all dashboard data
-  const fetchAllData = async () => {
+  const fetchAllData = () => {
     setIsLoading(true);
     try {
-      // Fetch summary
-      const sumRes = await fetch('/api/dashboard/summary');
-      const sumData = await sumRes.json();
-      if (sumData.success) setSummary(sumData.data);
+      const ordersData = dbMock.getOrders({ search, statusFilter, startDate, endDate });
+      setRentals(ordersData);
 
-      // Fetch rentals
-      const queryParams = new URLSearchParams({
-        search,
-        status: statusFilter,
-        startDate,
-        endDate
+      const allOrders = dbMock.getOrders();
+      const totals = dbMock.getReports().totals;
+      const totalRevenue = allOrders.reduce((sum, o) => sum + (parseFloat(o.rental_amount || 0) + parseFloat(o.cleaning_charge || 0) + parseFloat(o.deposit_amount || 0)), 0);
+
+      setSummary({
+        totalRentals: allOrders.length,
+        activeRentals: totals.activeRentals,
+        returnedRentals: totals.returnedRentals,
+        overdueRentals: totals.overdueRentals,
+        totalRevenue
       });
-      const rentRes = await fetch(`/api/rentals?${queryParams.toString()}`);
-      const rentData = await rentRes.json();
-      if (rentData.success) setRentals(rentData.data);
 
       // Fetch reports
-      const repRes = await fetch('/api/reports/summary');
-      const repData = await repRes.json();
-      if (repData.success) setReportsData(repData.data);
+      const repData = dbMock.getReports();
+      setReportsData(repData);
 
       // Fetch audit logs
-      const auditRes = await fetch('/api/audit-logs');
-      const auditData = await auditRes.json();
-      if (auditData.success) setAuditLogs(auditData.data);
+      const auditData = dbMock.getAuditLogs();
+      setAuditLogs(auditData);
 
       // Fetch system rules
-      const rulesRes = await fetch('/api/system-rules');
-      const rulesData = await rulesRes.json();
-      if (rulesData.success) setSystemRules(rulesData.data);
+      const rulesData = dbMock.getRules();
+      setSystemRules(rulesData);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
     } finally {
@@ -124,35 +121,36 @@ export default function AdminDashboard({ onClose, onLogout }) {
       const diffTime = returnDate - today;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      // 1. Overdue Alerts
-      if (r.status === 'Active' && returnDate < today) {
+      // 1. Delivery Delayed Alerts
+      if (r.status === 'Pending' && returnDate < today) {
         alerts.push({
           id: `overdue-${r.id}`,
           type: 'danger',
-          title: `Overdue Rental (ID: ${r.id})`,
-          desc: `${r.customer_name} was supposed to return "${r.saree_name}" on ${new Date(r.return_date).toLocaleDateString()}. Contact: ${r.phone}`,
+          title: `Delivery Delayed (ID: ${r.id})`,
+          desc: `Order for ${r.customer_name} should have arrived on ${new Date(r.return_date).toLocaleDateString()}. Contact: ${r.phone}`,
           time: returnDate
         });
       }
-      // 2. Upcoming Return Alerts (within 2 days)
-      else if (r.status === 'Active' && diffDays >= 0 && diffDays <= 2) {
+      // 2. Delivery Due Alerts (within 2 days)
+      else if (r.status === 'Pending' && diffDays >= 0 && diffDays <= 2) {
         alerts.push({
           id: `upcoming-${r.id}`,
           type: 'warning',
-          title: `Return Pending in ${diffDays === 0 ? 'today' : diffDays === 1 ? '1 day' : '2 days'}`,
-          desc: `"${r.saree_name}" rented by ${r.customer_name} is due on ${new Date(r.return_date).toLocaleDateString()}.`,
+          title: `Delivery Approaching (ID: ${r.id})`,
+          desc: `Order for ${r.customer_name} is scheduled for delivery on ${new Date(r.return_date).toLocaleDateString()}.`,
           time: returnDate
         });
       }
-      // 3. New Rental alert (created within 2 days)
+
+      // 3. New Order Registration alerts (past 2 days)
       const ageTime = today - createdDate;
       const ageDays = Math.ceil(ageTime / (1000 * 60 * 60 * 24));
       if (ageDays <= 2) {
         alerts.push({
           id: `new-${r.id}`,
           type: 'info',
-          title: 'New Rental Registered',
-          desc: `Rental ID: ${r.id} for ${r.customer_name} has been successfully registered.`,
+          title: 'New Order Registered',
+          desc: `Order ID: ${r.id} for ${r.customer_name} has been successfully registered.`,
           time: createdDate
         });
       }
@@ -311,7 +309,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
     }
 
     if (!formData.occasion.trim()) errors.occasion = 'Occasion is required';
-    if (!formData.saree_name.trim()) errors.saree_name = 'Saree/Garment name is required';
+    if (!formData.saree_name.trim()) errors.saree_name = 'Garment/Design name is required';
 
     if (!formData.rental_date) {
       errors.rental_date = 'Rental date is required';
@@ -397,7 +395,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
       email: '',
       occasion: '',
       saree_name: '',
-      saree_category: 'Saree',
+      saree_category: 'Blouses',
       size: 'M',
       rental_date: rentalDateStr,
       return_date: returnDateStr,
@@ -432,49 +430,30 @@ export default function AdminDashboard({ onClose, onLogout }) {
   };
 
   // Submit form handler
-  const handleFormSubmit = async (e) => {
+  const handleFormSubmit = (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    try {
-      const url = formMode === 'create' ? '/api/rentals' : `/api/rentals/${formData.id}`;
-      const method = formMode === 'create' ? 'POST' : 'PUT';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        setIsFormModalOpen(false);
-        fetchAllData();
-      } else {
-        console.error('Failed to submit form:', data.error);
-        alert(data.error || 'Server error occurred');
-      }
-    } catch (err) {
-      console.error('Error submitting form:', err);
+    if (formMode === 'create') {
+      const newOrder = {
+        ...formData,
+        id: Math.floor(100000 + Math.random() * 900000),
+        created_at: new Date().toISOString()
+      };
+      dbMock.addOrder(newOrder);
+    } else {
+      dbMock.updateOrder(formData);
     }
+    
+    setIsFormModalOpen(false);
+    fetchAllData();
   };
 
   // Delete rental handler
-  const handleDeleteRental = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this rental? This will also log this deletion in the audit records.')) return;
-    try {
-      const response = await fetch(`/api/rentals/${id}`, {
-        method: 'DELETE'
-      });
-      const data = await response.json();
-      if (data.success) {
-        fetchAllData();
-      } else {
-        alert(data.error || 'Failed to delete rental');
-      }
-    } catch (err) {
-      console.error('Error deleting rental:', err);
-    }
+  const handleDeleteRental = (id) => {
+    if (!window.confirm('Are you sure you want to delete this order? This will also log this deletion in the audit records.')) return;
+    dbMock.deleteOrder(id);
+    fetchAllData();
   };
 
   // Open View Details Modal
@@ -492,7 +471,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
 
     const headers = [
       'Rental ID', 'Customer Name', 'Phone', 'Email', 'Occasion', 
-      'Saree Name', 'Saree Category', 'Size', 'Rental Date', 'Return Date', 
+      'Garment Name', 'Category', 'Size', 'Rental Date', 'Return Date', 
       'Rental Amount ($)', 'Deposit Amount ($)', 'Cleaning Charge ($)', 'Status'
     ];
 
@@ -519,7 +498,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Ropita_Bonita_Rentals_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `Jyothi_Reddy_Boutique_Rentals_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -565,7 +544,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Ropita_Bonita_Reports_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `Jyothi_Reddy_Boutique_Reports_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -596,7 +575,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
         <div>
           <h2>Rental System & Occasion Styling Management</h2>
           <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            Track your saree inventories, customers, return statuses, and business reports.
+            Track your boutique inventories, customers, return statuses, and business reports.
           </p>
         </div>
         
@@ -608,7 +587,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
             🚪 Logout
           </button>
           <button className="btn-primary" onClick={handleOpenCreateModal}>
-            ➕ New Rental
+            ➕ New Order
           </button>
         </div>
       </div>
@@ -619,7 +598,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
           📊 Overview
         </button>
         <button className={`admin-tab-btn ${activeTab === 'rentals' ? 'active' : ''}`} onClick={() => setActiveTab('rentals')}>
-          👗 Manage Rentals
+          🛍️ Manage Orders
         </button>
         <button className={`admin-tab-btn ${activeTab === 'reports' ? 'active' : ''}`} onClick={() => setActiveTab('reports')}>
           📈 Reports & Charts
@@ -638,22 +617,22 @@ export default function AdminDashboard({ onClose, onLogout }) {
       {/* STAT CARDS ROW */}
       <div className="admin-stats-grid">
         <div className="stat-card">
-          <span className="stat-card-label">Total Rentals</span>
+          <span className="stat-card-label">Total Orders</span>
           <span className="stat-card-value">{isLoading ? '...' : summary.totalRentals}</span>
           <span className="stat-card-icon">📂</span>
         </div>
         <div className="stat-card" style={{ borderLeft: '4px solid var(--accent-mustard)' }}>
-          <span className="stat-card-label">Active Rentals</span>
+          <span className="stat-card-label">Shipped Orders</span>
           <span className="stat-card-value" style={{ color: '#906d00' }}>{isLoading ? '...' : summary.activeRentals}</span>
           <span className="stat-card-icon">⏳</span>
         </div>
         <div className="stat-card" style={{ borderLeft: '4px solid var(--accent-sage)' }}>
-          <span className="stat-card-label">Returned Rentals</span>
+          <span className="stat-card-label">Delivered Orders</span>
           <span className="stat-card-value" style={{ color: '#3f5933' }}>{isLoading ? '...' : summary.returnedRentals}</span>
           <span className="stat-card-icon">✓</span>
         </div>
         <div className="stat-card overdue">
-          <span className="stat-card-label">Overdue Rentals</span>
+          <span className="stat-card-label">Cancelled Orders</span>
           <span className="stat-card-value">{isLoading ? '...' : summary.overdueRentals}</span>
           <span className="stat-card-icon">🚨</span>
         </div>
@@ -673,11 +652,11 @@ export default function AdminDashboard({ onClose, onLogout }) {
             {/* Quick overview dashboard */}
             <div className="report-summary-box">
               <h3>Quick Controls</h3>
-              <p>Welcome to the Ropita Bonita Saree Rental back-office admin system. From here you can check off returned items, update deposit lists, print invoices, and view styling statistics.</p>
+              <p>Welcome to the Jyothi Reddy Boutique back-office admin system. From here you can check off shipped orders, update boutique rules, print invoices, and view sales statistics.</p>
               
               <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
                 <button className="btn-primary" onClick={() => setActiveTab('rentals')}>
-                  👗 Go to Rentals List
+                  🛍️ Go to Orders List
                 </button>
                 <button className="btn-secondary" onClick={() => setActiveTab('reports')}>
                   📈 Check Revenue Reports
@@ -686,14 +665,14 @@ export default function AdminDashboard({ onClose, onLogout }) {
 
               <div className="stitched-divider" style={{ margin: '30px 0 20px 0' }}></div>
               
-              <h4 style={{ fontFamily: 'var(--font-serif)', margin: '0 0 12px 0' }}>Active Rentals Overview</h4>
+              <h4 style={{ fontFamily: 'var(--font-serif)', margin: '0 0 12px 0' }}>Active Shipments Overview</h4>
               {isLoading ? (
                 <div>
                   <div className="skeleton-row"></div>
                   <div className="skeleton-row"></div>
                 </div>
               ) : rentals.filter(r => r.status === 'Active').length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No active rentals currently.</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No active shipments currently.</p>
               ) : (
                 <div className="table-responsive">
                   <table className="admin-table">
@@ -702,7 +681,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
                         <th>ID</th>
                         <th>Customer</th>
                         <th>Item</th>
-                        <th>Return Due</th>
+                        <th>Est. Delivery</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -770,10 +749,10 @@ export default function AdminDashboard({ onClose, onLogout }) {
             <div className="filter-select-wrapper">
               <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                 <option value="All">All Statuses</option>
-                <option value="Active">Active</option>
-                <option value="Returned">Returned</option>
+                <option value="Active">Shipped</option>
+                <option value="Returned">Delivered</option>
                 <option value="Pending">Pending</option>
-                <option value="Overdue">Overdue</option>
+                <option value="Overdue">Cancelled</option>
               </select>
             </div>
 
@@ -804,10 +783,10 @@ export default function AdminDashboard({ onClose, onLogout }) {
           ) : rentals.length === 0 ? (
             <div className="empty-state card">
               <span className="empty-state-icon">🧵</span>
-              <h3>No rental agreements found.</h3>
-              <p>Try clearing filters or register a new rental contract.</p>
+              <h3>No orders found.</h3>
+              <p>Try clearing filters or register a new order.</p>
               <button className="btn-primary" onClick={handleOpenCreateModal}>
-                Create First Rental
+                Create First Order
               </button>
             </div>
           ) : (
@@ -819,7 +798,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
                     <th>Customer Details</th>
                     <th>Occasion</th>
                     <th>Item Details</th>
-                    <th>Rental Dates</th>
+                    <th>Order & Delivery Dates</th>
                     <th>Financials</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -845,19 +824,19 @@ export default function AdminDashboard({ onClose, onLogout }) {
                       </td>
                       <td>
                         <div style={{ fontSize: '0.85rem' }}>
-                          <div>Rent: {new Date(r.rental_date).toLocaleDateString()}</div>
-                          <div>Due: {new Date(r.return_date).toLocaleDateString()}</div>
+                          <div>Order: {new Date(r.rental_date).toLocaleDateString()}</div>
+                          <div>Est: {new Date(r.return_date).toLocaleDateString()}</div>
                         </div>
                       </td>
                       <td>
                         <div style={{ fontSize: '0.85rem' }}>
-                          <div>Fee: {formatCurrency(r.rental_amount)}</div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Dep: {formatCurrency(r.deposit_amount)}</div>
+                          <div>Subtotal: {formatCurrency(r.rental_amount)}</div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Tax: {formatCurrency(r.deposit_amount)}</div>
                         </div>
                       </td>
                       <td>
                         <span className={`status-badge ${r.status.toLowerCase()}`}>
-                          {r.status}
+                          {r.status === 'Active' ? 'Shipped' : r.status === 'Returned' ? 'Delivered' : r.status === 'Overdue' ? 'Cancelled' : r.status}
                         </span>
                       </td>
                       <td>
@@ -913,21 +892,21 @@ export default function AdminDashboard({ onClose, onLogout }) {
                 </div>
 
                 <div className="report-summary-box">
-                  <h3>Rental Volumes by Status</h3>
+                  <h3>Order Volumes by Status</h3>
                   <div className="detail-row">
-                    <span>Active Contracts</span>
+                    <span>Shipped Orders</span>
                     <span>{reportsData.totals.activeRentals}</span>
                   </div>
                   <div className="detail-row">
-                    <span>Returned Contracts</span>
+                    <span>Delivered Orders</span>
                     <span>{reportsData.totals.returnedRentals}</span>
                   </div>
                   <div className="detail-row">
-                    <span>Overdue Contracts</span>
+                    <span>Cancelled Orders</span>
                     <span style={{ color: 'red', fontWeight: 'bold' }}>{reportsData.totals.overdueRentals}</span>
                   </div>
                   <div className="detail-row">
-                    <span>Pending Contracts</span>
+                    <span>Pending Orders</span>
                     <span>{reportsData.totals.pendingRentals}</span>
                   </div>
                 </div>
@@ -1067,35 +1046,19 @@ export default function AdminDashboard({ onClose, onLogout }) {
               ⚙️ System Rules Configuration
             </h3>
             <p className="settings-description">
-              Adjust default rules for saree rental calculations. These variables are saved to the primary database and govern automatic pricing during new rental creations and customer checkouts.
+              Adjust default rules for boutique rental calculations. These variables govern automatic pricing during new rental creations and customer checkouts.
             </p>
             
-            <form onSubmit={async (e) => {
+            <form onSubmit={(e) => {
               e.preventDefault();
               setIsSavingRules(true);
-              try {
-                const response = await fetch('/api/system-rules', {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(systemRules)
-                });
-                const data = await response.json();
-                if (response.ok && data.success) {
-                  setSystemRules(data.data);
-                  alert('System rules saved successfully!');
-                } else {
-                  alert(data.error || 'Failed to save system rules.');
-                }
-              } catch (err) {
-                console.error('Error saving rules:', err);
-                alert('Connection failed. Could not save settings.');
-              } finally {
-                setIsSavingRules(false);
-              }
+              dbMock.saveRules(systemRules);
+              alert('Boutique configurations saved successfully!');
+              setIsSavingRules(false);
             }} className="settings-form-grid">
               
               <div className="admin-form-group">
-                <label>Default Rental Fee Amount ($)</label>
+                <label>Flat Shipping Rate ($)</label>
                 <input
                   type="number"
                   step="0.01"
@@ -1108,7 +1071,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
               </div>
 
               <div className="admin-form-group">
-                <label>Security Deposit Percentage (decimal, e.g., 0.50 = 50%)</label>
+                <label>Tax Rate (decimal, e.g., 0.08 = 8%)</label>
                 <input
                   type="number"
                   step="0.01"
@@ -1122,7 +1085,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
               </div>
 
               <div className="admin-form-group">
-                <label>Default Cleaning Charge ($)</label>
+                <label>Free Shipping Minimum Threshold ($)</label>
                 <input
                   type="number"
                   step="0.01"
@@ -1135,7 +1098,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
               </div>
 
               <div className="admin-form-group">
-                <label>Default Rental Period Duration (Days)</label>
+                <label>Default Delivery Dispatch Window (Days)</label>
                 <input
                   type="number"
                   step="1"
@@ -1236,13 +1199,13 @@ export default function AdminDashboard({ onClose, onLogout }) {
 
                   {/* Saree Name */}
                   <div className="admin-form-group">
-                    <label>Saree / Garment Name *</label>
+                    <label>Garment / Design Name *</label>
                     <input 
                       type="text" 
                       name="saree_name" 
                       value={formData.saree_name} 
                       onChange={handleInputChange} 
-                      placeholder="Silk Banarasi Saree, Linen Slip, etc."
+                      placeholder="Emerald Silk Blouse, Crimson Linen Dress, etc."
                       className={formErrors.saree_name ? 'error' : ''} 
                     />
                     {formErrors.saree_name && <p className="error-text">{formErrors.saree_name}</p>}
@@ -1252,11 +1215,8 @@ export default function AdminDashboard({ onClose, onLogout }) {
                   <div className="admin-form-group">
                     <label>Category</label>
                     <select name="saree_category" value={formData.saree_category} onChange={handleInputChange}>
-                      <option value="Silk">Silk</option>
-                      <option value="Cotton">Cotton</option>
-                      <option value="Organza">Organza</option>
-                      <option value="Georgette">Georgette</option>
-                      <option value="Linen">Linen</option>
+                      <option value="Blouses">Blouses</option>
+                      <option value="Dresses">Dresses</option>
                     </select>
                   </div>
 
@@ -1273,18 +1233,18 @@ export default function AdminDashboard({ onClose, onLogout }) {
 
                   {/* Status (Only in edit, or defaults to active) */}
                   <div className="admin-form-group">
-                    <label>Rental Status</label>
+                    <label>Order Status</label>
                     <select name="status" value={formData.status} onChange={handleInputChange}>
-                      <option value="Active">Active</option>
-                      <option value="Returned">Returned</option>
+                      <option value="Active">Shipped</option>
+                      <option value="Returned">Delivered</option>
                       <option value="Pending">Pending</option>
-                      <option value="Overdue">Overdue</option>
+                      <option value="Overdue">Cancelled</option>
                     </select>
                   </div>
 
                   {/* Rental Date */}
                   <div className="admin-form-group">
-                    <label>Rental Date *</label>
+                    <label>Order Date *</label>
                     <input 
                       type="date" 
                       name="rental_date" 
@@ -1297,7 +1257,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
 
                   {/* Return Date */}
                   <div className="admin-form-group">
-                    <label>Return Date *</label>
+                    <label>Est. Delivery Date *</label>
                     <input 
                       type="date" 
                       name="return_date" 
@@ -1310,7 +1270,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
 
                   {/* Rental Amount */}
                   <div className="admin-form-group">
-                    <label>Rental Fee Amount ($) *</label>
+                    <label>Subtotal ($) *</label>
                     <input 
                       type="number" 
                       step="0.01" 
@@ -1324,7 +1284,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
 
                   {/* Deposit Amount */}
                   <div className="admin-form-group">
-                    <label>Security Deposit Amount ($) *</label>
+                    <label>Tax Amount ($) *</label>
                     <input 
                       type="number" 
                       step="0.01" 
@@ -1338,7 +1298,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
 
                   {/* Cleaning Charge */}
                   <div className="admin-form-group">
-                    <label>Cleaning Charge ($) *</label>
+                    <label>Shipping Charge ($) *</label>
                     <input 
                       type="number" 
                       step="0.01" 
@@ -1357,7 +1317,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">
-                  {formMode === 'create' ? 'Save Contract' : 'Update Contract'}
+                  {formMode === 'create' ? 'Save Order' : 'Update Order'}
                 </button>
               </div>
             </form>
@@ -1371,7 +1331,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
         <div className="admin-modal-overlay" onClick={() => setIsViewModalOpen(false)}>
           <div className="admin-modal wide print-only-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
-              <h3>Rental Invoice & Timeline Details (Contract #{selectedRental.id})</h3>
+              <h3>Order Invoice & Shipping Details (Order #{selectedRental.id})</h3>
               <button className="close-cart-btn" onClick={() => setIsViewModalOpen(false)}>×</button>
             </div>
             
@@ -1399,7 +1359,7 @@ export default function AdminDashboard({ onClose, onLogout }) {
                   <div className="detail-section">
                     <h4>Garment Details</h4>
                     <div className="detail-row">
-                      <span>Saree/Garment:</span>
+                      <span>Garment/Design:</span>
                       <span>{selectedRental.saree_name}</span>
                     </div>
                     <div className="detail-row">
@@ -1419,15 +1379,15 @@ export default function AdminDashboard({ onClose, onLogout }) {
                   <div className="detail-section">
                     <h4>Pricing & Payments</h4>
                     <div className="detail-row">
-                      <span>Rental Fee:</span>
+                      <span>Subtotal:</span>
                       <span>{formatCurrency(selectedRental.rental_amount)}</span>
                     </div>
                     <div className="detail-row">
-                      <span>Dry-Cleaning Charge:</span>
+                      <span>Shipping Charge:</span>
                       <span>{formatCurrency(selectedRental.cleaning_charge)}</span>
                     </div>
                     <div className="detail-row" style={{ borderBottom: '1px dashed #ccc', paddingBottom: '6px' }}>
-                      <span>Security Deposit (Refundable):</span>
+                      <span>Tax Amount:</span>
                       <span>{formatCurrency(selectedRental.deposit_amount)}</span>
                     </div>
                     <div className="detail-row" style={{ fontSize: '1.05rem', fontWeight: 'bold', paddingTop: '6px' }}>
@@ -1440,38 +1400,38 @@ export default function AdminDashboard({ onClose, onLogout }) {
                 {/* Timeline and History */}
                 <div>
                   <div className="detail-section">
-                    <h4>Rental Status & Timeline</h4>
+                    <h4>Order Status & Shipping Timeline</h4>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                       <span>Current Status:</span>
                       <span className={`status-badge ${selectedRental.status.toLowerCase()}`}>
-                        {selectedRental.status}
+                        {selectedRental.status === 'Active' ? 'Shipped' : selectedRental.status === 'Returned' ? 'Delivered' : selectedRental.status === 'Overdue' ? 'Cancelled' : selectedRental.status}
                       </span>
                     </div>
 
                     <div className="timeline-container">
                       <div className="timeline-item completed">
                         <div className="timeline-marker"></div>
-                        <h5 className="timeline-title">Rental Created</h5>
+                        <h5 className="timeline-title">Order Placed</h5>
                         <span className="timeline-date">{new Date(selectedRental.created_at || selectedRental.rental_date).toLocaleString()}</span>
                       </div>
                       
                       <div className={`timeline-item ${selectedRental.status !== 'Pending' ? 'completed' : 'active'}`}>
                         <div className="timeline-marker"></div>
-                        <h5 className="timeline-title">Item Dispatched (Active)</h5>
-                        <span className="timeline-date">Rental Start: {new Date(selectedRental.rental_date).toLocaleDateString()}</span>
+                        <h5 className="timeline-title">Package Shipped</h5>
+                        <span className="timeline-date">Shipped On: {new Date(selectedRental.rental_date).toLocaleDateString()}</span>
                       </div>
                       
                       <div className={`timeline-item ${selectedRental.status === 'Overdue' ? 'active' : selectedRental.status === 'Returned' ? 'completed' : ''}`}>
                         <div className="timeline-marker"></div>
-                        <h5 className="timeline-title">Return Deadline</h5>
-                        <span className="timeline-date">Due Date: {new Date(selectedRental.return_date).toLocaleDateString()}</span>
+                        <h5 className="timeline-title">Estimated Delivery</h5>
+                        <span className="timeline-date">Est. Date: {new Date(selectedRental.return_date).toLocaleDateString()}</span>
                       </div>
                       
                       {selectedRental.status === 'Returned' && (
                         <div className="timeline-item completed">
                           <div className="timeline-marker"></div>
-                          <h5 className="timeline-title">Returned & Inspected</h5>
-                          <span className="timeline-date">Deposit Refundable</span>
+                          <h5 className="timeline-title">Successfully Delivered</h5>
+                          <span className="timeline-date">Arrival Confirmed</span>
                         </div>
                       )}
                     </div>
@@ -1480,47 +1440,49 @@ export default function AdminDashboard({ onClose, onLogout }) {
                   <div className="detail-section">
                     <h4>Admin Quick Actions</h4>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {selectedRental.status !== 'Returned' && (
-                        <button className="btn-primary" style={{ background: 'var(--accent-sage)', borderColor: 'var(--text-primary)' }} onClick={async () => {
-                          try {
-                            const updated = { ...selectedRental, status: 'Returned' };
-                            const res = await fetch(`/api/rentals/${selectedRental.id}`, {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify(updated)
-                            });
-                            const data = await res.json();
-                            if (data.success) {
-                              setSelectedRental(data.data);
-                              fetchAllData();
-                            }
-                          } catch (err) {
-                            console.error(err);
-                          }
+                      {selectedRental.status === 'Pending' && (
+                        <button className="btn-primary" style={{ background: 'var(--accent-mustard)', borderColor: 'var(--text-primary)', color: 'var(--text-primary)' }} onClick={() => {
+                          const updated = { ...selectedRental, status: 'Active' };
+                          dbMock.updateOrder(updated);
+                          setSelectedRental(updated);
+                          fetchAllData();
                         }}>
-                          ✓ Mark Returned
+                          ✓ Mark Shipped
                         </button>
                       )}
                       
-                      {selectedRental.status === 'Returned' && (
-                        <button className="btn-secondary" onClick={async () => {
-                          try {
-                            const updated = { ...selectedRental, status: 'Active' };
-                            const res = await fetch(`/api/rentals/${selectedRental.id}`, {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify(updated)
-                            });
-                            const data = await res.json();
-                            if (data.success) {
-                              setSelectedRental(data.data);
-                              fetchAllData();
-                            }
-                          } catch (err) {
-                            console.error(err);
+                      {selectedRental.status === 'Active' && (
+                        <button className="btn-primary" style={{ background: 'var(--accent-sage)', borderColor: 'var(--text-primary)' }} onClick={() => {
+                          const updated = { ...selectedRental, status: 'Returned' };
+                          dbMock.updateOrder(updated);
+                          setSelectedRental(updated);
+                          fetchAllData();
+                        }}>
+                          ✓ Mark Delivered
+                        </button>
+                      )}
+
+                      {(selectedRental.status === 'Pending' || selectedRental.status === 'Active') && (
+                        <button className="btn-secondary" style={{ borderColor: 'red', color: 'red' }} onClick={() => {
+                          if (window.confirm("Are you sure you want to cancel this order?")) {
+                            const updated = { ...selectedRental, status: 'Overdue' };
+                            dbMock.updateOrder(updated);
+                            setSelectedRental(updated);
+                            fetchAllData();
                           }
                         }}>
-                          ↩ Reopen to Active
+                          ❌ Cancel Order
+                        </button>
+                      )}
+                      
+                      {(selectedRental.status === 'Returned' || selectedRental.status === 'Overdue') && (
+                        <button className="btn-secondary" onClick={() => {
+                          const updated = { ...selectedRental, status: 'Pending' };
+                          dbMock.updateOrder(updated);
+                          setSelectedRental(updated);
+                          fetchAllData();
+                        }}>
+                          ↩ Reopen to Pending
                         </button>
                       )}
 

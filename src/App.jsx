@@ -1,88 +1,89 @@
 import { useState, useEffect } from 'react';
+import { dbMock } from './dbMock';
 import './App.css';
 import AdminDashboard from './AdminDashboard';
 import AdminLogin from './AdminLogin';
 
 // Product images
-import banarasiSilkSaree from './assets/banarasi_silk_saree.png';
-import kanchipuramSaree from './assets/kanchipuram_saree.png';
-import chanderiSaree from './assets/chanderi_saree.png';
-import organzaSaree from './assets/organza_saree.png';
-import georgetteSaree from './assets/georgette_saree.png';
-import linenSaree from './assets/linen_saree.png';
+import emeraldSilkBlouse from './assets/emerald_silk_blouse.png';
+import indigoCottonDress from './assets/indigo_cotton_dress.png';
+import ivoryLaceBlouse from './assets/ivory_lace_blouse.png';
+import crimsonLinenDress from './assets/crimson_linen_dress.png';
+import mustardGeorgetteBlouse from './assets/mustard_georgette_blouse.png';
+import pinkOrganzaDress from './assets/pink_organza_dress.png';
 
 // Mock Product Database
 const PRODUCTS = [
   {
     id: 1,
-    title: "Crimson Royal Banarasi Silk Saree",
-    category: "Silk",
-    price: 120,
-    image: banarasiSilkSaree,
-    size: "OS",
-    fabric: "Pure Banarasi Silk & Zari",
-    condition: "Vintage Gem",
-    description: "An exquisite hand-woven royal crimson Banarasi saree featuring intricate golden floral zari work across the border and pallu. A timeless masterpiece.",
+    title: "Emerald Silk Designer Blouse",
+    category: "Blouses",
+    price: 85,
+    image: emeraldSilkBlouse,
+    size: "M",
+    fabric: "Raw Silk & Zardosi",
+    condition: "Handmade New",
+    description: "A luxury emerald green raw silk blouse featuring hand-embroidered floral zardosi work and a sophisticated sweetheart neckline.",
     stock: 5
   },
   {
     id: 2,
-    title: "Golden-Olive Kanchipuram Silk Saree",
-    category: "Silk",
-    price: 150,
-    image: kanchipuramSaree,
-    size: "OS",
-    fabric: "Pure Mulberry Silk",
+    title: "Indigo Cotton Handblock Print Dress",
+    category: "Dresses",
+    price: 95,
+    image: indigoCottonDress,
+    size: "M",
+    fabric: "Organic Hand-spun Cotton",
     condition: "Gently Loved",
-    description: "A classic Kanchipuram silk saree in a stunning golden-olive hue, paired with a rich temple border and deep red zari-woven details.",
+    description: "An elegant, breathable midi dress adorned with indigo handblock floral prints, a tiered skirt, and puff sleeves.",
     stock: 5
   },
   {
     id: 3,
-    title: "Indigo Chanderi Cotton-Silk Saree",
-    category: "Cotton",
-    price: 45,
-    image: chanderiSaree,
-    size: "OS",
-    fabric: "Chanderi Cotton-Silk Blend",
+    title: "Ivory Lace Designer Blouse",
+    category: "Blouses",
+    price: 75,
+    image: ivoryLaceBlouse,
+    size: "S",
+    fabric: "Chantilly Lace & Satin",
     condition: "Handmade New",
-    description: "Lightweight and semi-sheer, this beautiful Indigo Chanderi saree features hand-woven gold borders and delicate bootis, offering breezy elegance.",
+    description: "A delicate cream Chantilly lace blouse with a sheer high neckline, buttoned back, and comfortable satin lining.",
     stock: 5
   },
   {
     id: 4,
-    title: "Mint Floral Organza Saree",
-    category: "Organza",
-    price: 65,
-    image: organzaSaree,
-    size: "OS",
-    fabric: "Premium Organza Silk",
+    title: "Crimson Linen Tiered Maxi Dress",
+    category: "Dresses",
+    price: 110,
+    image: crimsonLinenDress,
+    size: "L",
+    fabric: "Pure Italian Linen",
     condition: "Gently Loved",
-    description: "A dreamy mint green organza saree adorned with delicate, hand-painted watercolor pink rose motifs. Flows gracefully with a slight shimmer.",
+    description: "A vibrant crimson tiered maxi dress with adjustable tie-up shoulder straps and a relaxed yet flattering silhouette.",
     stock: 5
   },
   {
     id: 5,
-    title: "Midnight Blue Sequin Georgette Saree",
-    category: "Georgette",
-    price: 85,
-    image: georgetteSaree,
+    title: "Mustard Georgette Peplum Blouse",
+    category: "Blouses",
+    price: 65,
+    image: mustardGeorgetteBlouse,
     size: "OS",
-    fabric: "Faux Georgette with Sequins",
+    fabric: "Georgette & Mirror Work",
     condition: "Upcycled Gem",
-    description: "A glamorous midnight blue saree embellished with tiny glittering sequins that catch the light beautifully. Comes with a matching upcycled border.",
+    description: "A stylish peplum blouse featuring intricate mirror embroidery on the yoke and a flared hemline, perfect for occasions.",
     stock: 5
   },
   {
     id: 6,
-    title: "Tangerine Handloom Linen Saree",
-    category: "Linen",
-    price: 55,
-    image: linenSaree,
-    size: "OS",
-    fabric: "Pure Handloom Linen",
+    title: "Pastel Pink Organza Day Dress",
+    category: "Dresses",
+    price: 125,
+    image: pinkOrganzaDress,
+    size: "M",
+    fabric: "Premium Organza & Crepe",
     condition: "Handmade New",
-    description: "A bright and textured tangerine linen saree featuring a metallic silver zari border. Highly breathable, soft, and perfect for day events.",
+    description: "A romantic pastel pink dress in lightweight organza, featuring a hand-painted floral pattern, wrap bodice, and ruffled hem.",
     stock: 5
   }
 ];
@@ -111,26 +112,15 @@ function App() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminToken, setAdminToken] = useState('');
   const [systemRules, setSystemRules] = useState({
-    rental_fee_default: '50.00',
-    deposit_percent_default: '0.50',
-    cleaning_charge_default: '5.00',
-    rental_period_default: '7'
+    rental_fee_default: '5.99',
+    deposit_percent_default: '0.08',
+    cleaning_charge_default: '75.00',
+    rental_period_default: '5'
   });
 
-  // Fetch system rules on load
+  // Load system rules from local DB
   useEffect(() => {
-    const fetchRules = async () => {
-      try {
-        const response = await fetch('/api/system-rules');
-        const data = await response.json();
-        if (response.ok && data.success) {
-          setSystemRules(data.data);
-        }
-      } catch (err) {
-        console.error('Error fetching system rules:', err);
-      }
-    };
-    fetchRules();
+    setSystemRules(dbMock.getRules());
   }, []);
 
   // Checkout Modal Step Wizard
@@ -194,7 +184,7 @@ function App() {
 
   const handleWhatsAppInquiry = (product) => {
     const number = (systemRules.whatsapp_number_default || '+916309571931').replace(/[^\d+]/g, '');
-    const message = `Hello Ropita Bonita! I am interested in inquiring about this saree from your catalogue:
+    const message = `Hello Jyothi Reddy Boutique! I am interested in inquiring about this boutique design from your catalogue:
 - *Name:* ${product.title} (ID: ${product.id})
 - *Price:* $${product.price}
 - *Fabric:* ${product.fabric}
@@ -214,7 +204,7 @@ Is it available for booking/purchase? Thanks!`;
       return `${idx + 1}. *${item.product.title}* (Qty: ${item.quantity}, Fabric: ${item.product.fabric}) - $${item.product.price * item.quantity}`;
     }).join('\n');
     
-    const message = `Hello Ropita Bonita! I would like to inquire about these sarees in my shopping bag:
+    const message = `Hello Jyothi Reddy Boutique! I would like to inquire about these items in my shopping bag:
 
 ${itemsText}
 
@@ -239,13 +229,20 @@ Are these items available for booking/purchase?`;
       discountAmount = Math.min(appliedCoupon.value, subtotal);
     }
   }
-  const shippingCost = subtotal > 75 || subtotal === 0 ? 0 : 5.99;
-  const total = Math.max(0, subtotal - discountAmount + shippingCost);
+  
+  const shippingFlatRate = parseFloat(systemRules.rental_fee_default || '5.99');
+  const taxRate = parseFloat(systemRules.deposit_percent_default || '0.08');
+  const shippingThreshold = parseFloat(systemRules.cleaning_charge_default || '75.00');
+
+  const discountVal = discountAmount;
+  const taxAmount = parseFloat(((subtotal - discountVal) * taxRate).toFixed(2));
+  const shippingCost = (subtotal - discountVal) >= shippingThreshold || subtotal === 0 ? 0 : shippingFlatRate;
+  const total = Math.max(0, subtotal - discountVal + taxAmount + shippingCost);
 
   // Apply Coupon Code
   const applyCoupon = () => {
     const code = couponInput.trim().toUpperCase();
-    if (code === 'BONITA10') {
+    if (code === 'JYOTHI10') {
       setAppliedCoupon({ code, discountType: 'percentage', value: 10 });
       setCouponError('');
       setCouponInput('');
@@ -305,51 +302,44 @@ Are these items available for booking/purchase?`;
     return Object.keys(errors).length === 0;
   };
 
-  const submitRentalFromCheckout = async () => {
+  const submitRentalFromCheckout = () => {
     const sareeName = cart.map(item => `${item.product.title} (Qty: ${item.quantity})`).join(', ');
     const sareeCategory = cart.map(item => item.product.category).join(', ');
     const size = cart.map(item => item.product.size).join(', ');
     
     const todayStr = new Date().toISOString().split('T')[0];
-    const returnDate = new Date();
-    const defaultPeriod = parseInt(systemRules.rental_period_default || '7', 10);
-    returnDate.setDate(returnDate.getDate() + defaultPeriod);
-    const returnDateStr = returnDate.toISOString().split('T')[0];
+    const deliveryDate = new Date();
+    const deliveryPeriod = parseInt(systemRules.rental_period_default || '5', 10);
+    deliveryDate.setDate(deliveryDate.getDate() + deliveryPeriod);
+    const deliveryDateStr = deliveryDate.toISOString().split('T')[0];
     
-    const depositPct = parseFloat(systemRules.deposit_percent_default || '0.50');
-    const cleaningFee = parseFloat(systemRules.cleaning_charge_default || '5.00');
+    const shippingFlatRate = parseFloat(systemRules.rental_fee_default || '5.99');
+    const taxRate = parseFloat(systemRules.deposit_percent_default || '0.08');
+    const shippingThreshold = parseFloat(systemRules.cleaning_charge_default || '75.00');
 
-    const rentalData = {
+    const discountVal = discountAmount;
+    const taxVal = parseFloat(((subtotal - discountVal) * taxRate).toFixed(2));
+    const shippingFee = (subtotal - discountVal) >= shippingThreshold ? 0 : shippingFlatRate;
+
+    const orderData = {
+      id: Math.floor(100000 + Math.random() * 900000),
       customer_name: shippingForm.name,
-      phone: shippingForm.phone || '+34 600 000 000',
+      phone: shippingForm.phone || '+91 63095 71931',
       email: shippingForm.email,
-      occasion: orderNote.trim() || 'Occasion Wear',
+      occasion: orderNote.trim() || 'General Purchase',
       saree_name: sareeName,
       saree_category: sareeCategory,
       size: size,
       rental_date: todayStr,
-      return_date: returnDateStr,
-      rental_amount: subtotal,
-      deposit_amount: parseFloat((subtotal * depositPct).toFixed(2)),
-      cleaning_charge: cleaningFee,
-      status: 'Active'
+      return_date: deliveryDateStr,
+      rental_amount: subtotal - discountVal,
+      deposit_amount: taxVal,
+      cleaning_charge: shippingFee,
+      status: 'Pending',
+      created_at: new Date().toISOString()
     };
 
-    try {
-      const response = await fetch('/api/rentals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(rentalData)
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        console.error('Failed to submit rental:', data.error);
-      } else {
-        console.log('Rental recorded successfully in database:', data.data);
-      }
-    } catch (err) {
-      console.error('Error submitting rental:', err);
-    }
+    dbMock.addOrder(orderData);
   };
 
   const validatePayment = () => {
@@ -384,7 +374,7 @@ Are these items available for booking/purchase?`;
         // Submit rental to DB
         submitRentalFromCheckout();
         // Order Successful! Generate order number and jump to step 3.
-        const orderNum = 'RB-' + Math.floor(100000 + Math.random() * 900000);
+        const orderNum = 'JR-' + Math.floor(100000 + Math.random() * 900000);
         setSimulatedOrderNum(orderNum);
         setCheckoutStep(3);
       }
@@ -417,8 +407,8 @@ Are these items available for booking/purchase?`;
     <div>
       {/* Announcement Bar */}
       <div className="announcement-bar">
-        <span>✨ Hand-Woven Saree Heritage & Curated Restorations. Free shipping over $75!</span>
-        <span className="highlight">Each saree is a unique, hand-crafted history.</span>
+        <span>✨ Designer Blouses & Bespoke Outfits. Free shipping over $75!</span>
+        <span className="highlight">Each design is a unique, hand-crafted work of art.</span>
       </div>
 
       <div className="app-container">
@@ -426,8 +416,8 @@ Are these items available for booking/purchase?`;
         <header className="site-header">
           <div className="header-top">
             <a href="/" className="brand-title" onClick={(e) => { e.preventDefault(); setSelectedCategory('All'); setSearchQuery(''); }}>
-              Ropita Bonita
-              <span className="brand-subtitle">curated slow fashion sarees</span>
+              Jyothi Reddy Boutique
+              <span className="brand-subtitle">curated designer blouses & dresses</span>
             </a>
 
             {/* Search */}
@@ -435,7 +425,7 @@ Are these items available for booking/purchase?`;
               <input
                 type="text"
                 className="search-input"
-                placeholder="Search Banarasi, Linen, Silk, Organza..."
+                placeholder="Search blouses, dresses, fabrics, designers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -490,27 +480,27 @@ Are these items available for booking/purchase?`;
             {/* Philosophy Intro Card */}
             <section className="story-section hand-drawn-border">
           <div className="story-content">
-            <h2>Our Slow Fashion Saree Philosophy</h2>
+            <h2>Our Slow Fashion Philosophy</h2>
             <p>
-              At <strong>Ropita Bonita</strong>, we believe every handloom saree holds a heritage worth honoring. 
-              We curate vintage Kanchipuram silks, delicate Chanderi cottons, and upcycle georgette sarees, 
-              preserving the legacy of Indian weaving traditions.
+              At <strong>Jyothi Reddy Boutique</strong>, we believe every bespoke garment holds a heritage worth honoring. 
+              We curate hand-crafted designer blouses, elegant occasion dresses, and custom tailored outfits, 
+              preserving the legacy of premium Indian craftsmanship.
             </p>
             <p>
-              By choosing pre-loved and handmade sarees, you celebrate slow fashion, support artisans, and give a 
-              second life to unique hand-crafted histories. Draped in beauty and sustainability.
+              By choosing curated and custom-made garments, you celebrate slow fashion, support artisans, and wear 
+              a unique hand-crafted history. Styled in beauty and sustainability.
             </p>
           </div>
           <div className="story-stamp">
             <p className="story-stamp-title">100% Curated</p>
-            <p className="story-stamp-sub">heritage handlooms</p>
+            <p className="story-stamp-sub">artisan designs</p>
           </div>
         </section>
 
         {/* Filter controls */}
         <section className="shop-controls">
           <div className="category-tabs">
-            {['All', 'Silk', 'Cotton', 'Organza', 'Georgette', 'Linen'].map((cat) => (
+            {['All', 'Blouses', 'Dresses'].map((cat) => (
               <button
                 key={cat}
                 className={`category-tab ${selectedCategory === cat ? 'active' : ''}`}
@@ -634,7 +624,7 @@ Are these items available for booking/purchase?`;
         <div className="app-container">
           <div className="footer-content">
             <div className="footer-brand">
-              <h3>Ropita Bonita</h3>
+              <h3>Jyothi Reddy Boutique</h3>
               <p>
                 We curate, sew, mend, and ship our items from our home studio. 
                 Our packaging is 100% compostable and made of recycled fibers.
@@ -658,14 +648,14 @@ Are these items available for booking/purchase?`;
                 Boutique Barrio, CP 28004
               </p>
               <p>
-                📧 hello@ropitabonita.com<br />
+                📧 hello@jyothireddyboutique.com<br />
                 📞 +34 912 345 678
               </p>
             </div>
           </div>
 
           <div className="footer-bottom">
-            <p>© {new Date().getFullYear()} Ropita Bonita. Stitched together by hands, not assembly lines.</p>
+            <p>© {new Date().getFullYear()} Jyothi Reddy Boutique. Stitched together by hands, not assembly lines.</p>
             <div className="footer-socials">
               <a href="https://instagram.com" className="social-icon-link" aria-label="Instagram" target="_blank" rel="noopener noreferrer">📸</a>
               <a href="https://pinterest.com" className="social-icon-link" aria-label="Pinterest" target="_blank" rel="noopener noreferrer">📌</a>
@@ -768,6 +758,11 @@ Are these items available for booking/purchase?`;
               </div>
               
               <div className="summary-row">
+                <span>Estimated Tax ({parseFloat(systemRules.deposit_percent_default || '0.08') * 100}%)</span>
+                <span>${taxAmount.toFixed(2)}</span>
+              </div>
+
+              <div className="summary-row">
                 <span>Shipping</span>
                 <span>{shippingCost === 0 ? 'Free' : `$${shippingCost.toFixed(2)}`}</span>
               </div>
@@ -777,7 +772,10 @@ Are these items available for booking/purchase?`;
                 <span>${total.toFixed(2)}</span>
               </div>
 
-              <div style={{ marginTop: '16px' }}>
+              <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <button className="checkout-btn" onClick={triggerCheckout} style={{ width: '100%', padding: '12px', background: 'var(--accent-coral)', color: 'white', border: '2px solid var(--text-primary)', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  🛍️ Secure Checkout
+                </button>
                 <button className="whatsapp-cart-inquire-btn" onClick={handleWhatsAppBagInquiry}>
                   💬 Inquire Bag via WhatsApp
                 </button>
@@ -1001,7 +999,7 @@ Are these items available for booking/purchase?`;
         </div>
       )}
 
-      {/* Saree Details Modal */}
+      {/* Product Details Modal */}
       {selectedProductForDetails && (
         <div className="details-modal-overlay" onClick={() => setSelectedProductForDetails(null)}>
           <div className="details-modal hand-drawn-border" onClick={(e) => e.stopPropagation()}>
@@ -1012,7 +1010,7 @@ Are these items available for booking/purchase?`;
                 <span className="details-badge-condition">{selectedProductForDetails.condition}</span>
               </div>
               <div className="details-modal-info">
-                <span className="details-category">{selectedProductForDetails.category} Saree</span>
+                <span className="details-category">{selectedProductForDetails.category}</span>
                 <h2 className="details-title">{selectedProductForDetails.title}</h2>
                 <div className="details-price-tag">
                   <span>${selectedProductForDetails.price}</span>
@@ -1027,7 +1025,7 @@ Are these items available for booking/purchase?`;
                   </div>
                   <div className="details-meta-item">
                     <strong>Size:</strong>
-                    <span>{selectedProductForDetails.size} (Free size draping)</span>
+                    <span>{selectedProductForDetails.size} Standard</span>
                   </div>
                   <div className="details-meta-item">
                     <strong>Availability:</strong>

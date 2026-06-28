@@ -43,7 +43,7 @@ export default function AdminLogin({ onLoginSuccess, onClose }) {
       <div className="login-card hand-drawn-border">
         <div className="login-header">
           <h2>Boutique Management Login</h2>
-          <span className="brand-subtitle">Ropita Bonita portal</span>
+          <span className="brand-subtitle">Jyothi Reddy Boutique portal</span>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
